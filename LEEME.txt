@@ -1,0 +1,13 @@
+PUBLICAR EN GITHUB PAGES (desde el iPhone, en Safari)
+
+1. Descomprime este ZIP en la app Archivos.
+2. En github.com crea un repositorio nuevo, público (por ejemplo: rutaguia).
+3. En el repositorio: Add file > Upload files. Sube TODOS los archivos de la carpeta
+   (index.html, manifest.json, los 3 PNG y .nojekyll). Si .nojekyll no aparece en iOS,
+   no pasa nada: se puede omitir. Pulsa Commit changes.
+4. Settings > Pages > Source: Deploy from a branch > Branch: main / (root) > Save.
+5. En 1 o 2 minutos la app estará en: https://TU-USUARIO.github.io/rutaguia/
+6. Abre ese enlace en Safari > Compartir > Agregar a pantalla de inicio.
+
+NOTA: los datos de la app se guardan en el navegador por dirección web. En la dirección
+nueva (github.io) la app empieza vacía.
