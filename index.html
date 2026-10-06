@@ -45,9 +45,13 @@ details.ac,details{background:var(--card);border:1px solid var(--ln);border-radi
 .top .bd{margin-left:6px}
 
 .bar i.done{background:var(--ok)}input[type=checkbox],input[type=radio]{accent-color:var(--acb)}
-.b:not(.s):not(.t):not(:disabled):active{background:var(--acp)}.tag.or{background:var(--orbg);color:var(--ort)}.li .pe{color:var(--wa)}.ic.al{color:var(--or)}</style><link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-v2.png?v=2">
+.b:not(.s):not(.t):not(:disabled):active{background:var(--acp)}.tag.or{background:var(--orbg);color:var(--ort)}.li .pe{color:var(--wa)}.ic.al{color:var(--or)}.top{position:relative}.pf{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#fff;font:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}.pf small{position:absolute;right:-2px;bottom:-2px;background:#fff;color:#1d4ed8;border-radius:8px;font-size:11px;min-width:16px;height:16px;line-height:16px;text-align:center}.top .hi{padding-right:52px}</style><link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-v2.png?v=2">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192-v2.png?v=2">
 <link rel="manifest" href="manifest.json?v=2">
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head><body><main id="app"></main><nav class="nav" id="nav"></nav>
 <script>
 /* ===== CONTENIDO CENTRALIZADO: edita aquí planes, pasos, guiones, objeciones y contenido oficial ===== */
@@ -126,7 +130,7 @@ const $=s=>document.querySelector(s),E=s=>String(s==null?'':s).replace(/[&<>"]/g
 const init=()=>({tab:'inicio',p:null,d:{},r:null,team:false,acts:{},res:{},people:[],rev:[],ev:[],role:'miembro',v:null,stage:'perfil',tmp:{}});
 let S;try{S=JSON.parse(localStorage.getItem('g30'))||init()}catch(e){S=init()}
 S.inc=S.inc||{act:{},biz:{},hist:[],last:{}};S.ins=S.ins||[];
-const save=()=>{try{localStorage.setItem('g30',JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem('g30',JSON.stringify(S))}catch(e){}try{window.CS&&CS.touch()}catch(e){}};
 const mixto=()=>[...C.routes.venta.steps.map(s=>({...s,area:'Ventas'})),...C.routes[S.team?'l4x30':'c4x30'].steps.map(s=>({...s,area:'Equipo'}))];
 const steps=()=>S.r=='mixto'?mixto():C.routes[S.r].steps;
 const rname=()=>S.r=='mixto'?'MIXTO 30 · Ventas + '+(S.team?'Liderazgo':'Construcción'):C.routes[S.r].name;
@@ -140,7 +144,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 function assign(){const g=S.d.goal;S.team=S.d.team=='Sí';
 S.r=g==0?'venta':g==1?'c4x30':g==2?(S.team?'l4x30':'c4x30'):g==3||g==4?'mixto':'bienestar';
 if(g==3)S.team=false;if(g==4)S.team=true;S.stage='reporte';save()}
-function render(){const A=$('#app'),N=$('#nav');N.style.display='none';
+function render(){if(window.CS&&CS.gate())return;const A=$('#app'),N=$('#nav');N.style.display='none';
 if(S.stage=='perfil')return A.innerHTML=perfil();
 if(S.stage=='diag')return A.innerHTML=diag();
 if(S.stage=='reporte')return A.innerHTML=reporte();
@@ -523,7 +527,7 @@ IC.users=IC.personas;
 const ic=(n,c)=>`<svg class="ic ${c||''}${n=='alert'?' al':''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`;
 function toast(m){if(!m)return;let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');document.body.appendChild(t)}const er=/no pude|no se pudo|error|ocurrió|elige|falta|escribe|indica|completa|registra|antes de|ya fue|ya existe|aún no|verifica/i.test(m),ok=/guardad|copiad|importad|actualizad|generad|listo|completad|agregad|compartid/i.test(m);t.className='toast'+(er&&!ok?' er':'');t.textContent=(ok&&!er?'✓ ':'')+m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3200)}
 const nwN=()=>Object.values(S.L.team).filter(m=>!m.visto).length;
-function hdr(){const h=new Date().getHours(),g=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches',n=nwN();return`<div class="top"><div class="hi">${g}, ${E(S.p.n)}</div><div class="m">${new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</div><div class="seg" role="tablist"><button class="${S.mode!='equipo'?'on':''}" data-a="mode" data-v="yo" aria-pressed="${S.mode!='equipo'}">YO</button><button class="${S.mode=='equipo'?'on':''}" data-a="mode" data-v="equipo" aria-pressed="${S.mode=='equipo'}">MI EQUIPO${n?`<i class="bd">${n}</i>`:''}</button></div></div>`}
+function hdr(){const h=new Date().getHours(),g=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches',n=nwN();return`<div class="top">${pfBtn()}<div class="hi">${g}, ${E(S.p.n)}</div><div class="m">${new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</div><div class="seg" role="tablist"><button class="${S.mode!='equipo'?'on':''}" data-a="mode" data-v="yo" aria-pressed="${S.mode!='equipo'}">YO</button><button class="${S.mode=='equipo'?'on':''}" data-a="mode" data-v="equipo" aria-pressed="${S.mode=='equipo'}">MI EQUIPO${n?`<i class="bd">${n}</i>`:''}</button></div></div>`}
 const dueP=()=>S.people.filter(p=>p.fecha&&p.fecha<=today()&&!['Cliente','No interesado'].includes(p.estado)).sort((a,b)=>a.fecha<b.fecha?-1:1);
 const ago0=d=>{const n=Math.round((Date.now()-new Date(d+'T12:00'))/864e5);return n<=1?'ayer':'hace '+n+' días'};
 function notes(){const ids=actIds(),b=IB(),d=b.upd?-dleft(b.upd):99,al=alerts();let h=fbCard();
@@ -601,5 +605,76 @@ delok(e,v){S.people.splice(+v,1);closeSheet();toast('Persona eliminada.')},shx()
 const TK='g30theme',curTheme=()=>{let t=null;try{t=localStorage.getItem(TK)}catch(e){}return t||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')},applyTheme=t=>{try{document.documentElement.setAttribute('data-theme',t)}catch(e){}};
 try{const t=localStorage.getItem(TK);if(t)applyTheme(t)}catch(e){}
 A.theme=(e,v)=>{try{localStorage.setItem(TK,v)}catch(x){}applyTheme(v)};
+/* ===== ETAPA 1: Google + nube (Firebase Auth + Firestore). Local primero, nube después ===== */
+const CS=(()=>{
+const cfg=window.FIREBASE_CONFIG||{};let on=!!(cfg.apiKey&&cfg.projectId&&!/PEGAR/i.test(cfg.apiKey+cfg.projectId)&&typeof firebase!=='undefined');
+const SEC={profile:['p','d','stage','uid','fbUid'],plan:['r','team'],activities:['acts','res','g','sup'],people:['people','ins'],meetings:['jt','rev'],incentives:['inc'],progress:['ev'],settings:['mode','eqt','lt','role'],team:['L','fbIn']};
+const MK='g30meta',st={state:on?'pending':'off',user:null,gate:null,last:0};
+let meta={},tm=null,busy=false,api=null,lastRec=0;
+const lm=()=>{try{meta=JSON.parse(localStorage.getItem(MK))||{}}catch(e){meta={}}['rev','hash','base','localAt','cur'].forEach(k=>meta[k]=meta[k]||{})},sm=()=>{try{localStorage.setItem(MK,JSON.stringify(meta))}catch(e){}};
+const hs=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return h+':'+s.length};
+const snap=()=>{const o={};for(const k in SEC){const d={};SEC[k].forEach(x=>{if(S[x]!==undefined)d[x]=S[x]});o[k]=JSON.stringify(d)}return o};
+const hasData=()=>!!(S.p&&S.p.n);
+const backup=()=>{try{localStorage.setItem('g30_backup_'+Date.now(),localStorage.getItem('g30')||'{}');Object.keys(localStorage).filter(x=>x.startsWith('g30_backup_')).sort().slice(0,-3).forEach(x=>localStorage.removeItem(x))}catch(e){}};
+const LBL={synced:'✓ Sincronizado',syncing:'Sincronizando…',offline:'Sin conexión',pending:'Cambios pendientes',error:'No se pudo sincronizar',off:'Nube no configurada'},DOT={synced:'✓',syncing:'↻',offline:'⊘',pending:'●',error:'!',off:''};
+const paint=()=>{try{document.querySelectorAll('[data-cs]').forEach(e=>{const k=e.dataset.cs;e.textContent=k=='dot'?DOT[st.state]:k=='state'?LBL[st.state]:lastTxt()})}catch(e){}};
+const setS=s=>{st.state=s;paint()},lastTxt=()=>st.last||meta.last?new Date(st.last||meta.last).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Aún no';
+const redraw=()=>{try{render()}catch(e){}};
+function applyRemote(secs){backup();let cur={};try{cur=JSON.parse(localStorage.getItem('g30'))||{}}catch(e){}
+for(const k in secs){let d={};try{d=JSON.parse(secs[k].json)}catch(e){continue}Object.keys(d).forEach(x=>cur[x]=d[x]);meta.rev[k]=secs[k].rev;meta.hash[k]=hs(secs[k].json);meta.base[k]=secs[k].updatedAt;meta.cur[k]=meta.hash[k]}
+localStorage.setItem('g30',JSON.stringify(cur));sm();try{sessionStorage.setItem('g30_rl',String(Date.now()))}catch(e){}location.reload()}
+async function pushSec(k,json,rem){const now=Date.now(),r=await api.write(st.user.uid,k,{json,updatedAt:now,userId:st.user.uid},rem?rem.rev:0);if(!r.ok)throw new Error('conflict');meta.rev[k]=r.rev;meta.hash[k]=hs(json);meta.base[k]=now;meta.cur[k]=meta.hash[k];sm()}
+async function reconcile(){if(!on||!api||!st.user||st.gate||busy)return;if(navigator.onLine===false)return setS('offline');busy=true;setS('syncing');
+try{const remote=await api.getAll(st.user.uid),sn=snap(),take={},up=[];
+for(const k in SEC){const r=remote[k],h=hs(sn[k]),dirty=meta.hash[k]!==h;
+if(!r){if((dirty||meta.rev[k]===undefined)&&hasData())up.push(k);continue}
+if(r.rev===meta.rev[k]){if(dirty)up.push(k);continue}
+if(!dirty){take[k]=r;continue}
+if((meta.localAt[k]||0)>r.updatedAt)up.push(k);else take[k]=r}
+if(Object.keys(take).length){let rl=0;try{rl=+sessionStorage.getItem('g30_rl')||0}catch(e){}if(Date.now()-rl>3000){applyRemote(take);return}}
+for(const k of up)await pushSec(k,sn[k],remote[k]);
+st.last=Date.now();meta.last=st.last;sm();setS('synced')}
+catch(e){setS(navigator.onLine===false?'offline':'error')}finally{busy=false}}
+function touch(){if(!on||!api||!st.user||st.gate)return;const sn=snap();let d=false;
+for(const k in SEC){const h=hs(sn[k]);if(meta.cur[k]!==h){meta.cur[k]=h;meta.localAt[k]=Date.now()}if(meta.hash[k]!==h)d=true}
+sm();if(!d)return;setS(navigator.onLine===false?'offline':'pending');clearTimeout(tm);tm=setTimeout(reconcile,1800)}
+async function onUser(u){st.user=u?{uid:u.uid,name:u.displayName||'',email:u.email||'',photo:u.photoURL||''}:null;
+if(!u){st.gate='login';redraw();return}
+lm();
+if(meta.uid&&meta.uid!==u.uid){backup();localStorage.removeItem('g30');meta={uid:u.uid,rev:{},hash:{},base:{},localAt:{},cur:{}};sm();location.reload();return}
+if(!meta.uid){let r={};try{r=await api.getAll(u.uid)}catch(e){st.gate=null;setS('error');redraw();return}
+if(Object.keys(r).length){meta.uid=u.uid;sm();applyRemote(r);return}
+if(hasData()){st.gate='link';redraw();return}
+meta.uid=u.uid;sm()}
+st.gate=null;S.fbUid=u.uid;save();redraw();reconcile()}
+function makeApi(){const auth=firebase.auth(),fs=firebase.firestore(),col=u=>fs.collection('users').doc(u).collection('sections');
+return{onUser:cb=>auth.onAuthStateChanged(cb),
+async signIn(){const p=new firebase.auth.GoogleAuthProvider();try{await auth.signInWithPopup(p)}catch(e){if(e.code=='auth/popup-blocked'||e.code=='auth/operation-not-supported-in-this-environment'){await auth.signInWithRedirect(p)}else throw e}},
+signOut:()=>auth.signOut(),
+async getAll(u){const o={};(await col(u).get()).forEach(d=>{const x=d.data();o[d.id]={json:x.json,rev:x.rev||0,updatedAt:x.updatedAt||0}});return o},
+write:(u,k,data,exp)=>fs.runTransaction(async tx=>{const ref=col(u).doc(k),s=await tx.get(ref),rr=s.exists?(s.data().rev||0):0;if(rr!==exp)return{ok:false};tx.set(ref,{...data,rev:rr+1,createdAt:s.exists?s.data().createdAt:data.updatedAt});return{ok:true,rev:rr+1}})}}
+function attach(a){api=a;on=true;st.gate='loading';st.state='pending';lm();api.onUser(onUser)}
+function init(){if(!on)return;try{firebase.initializeApp(cfg)}catch(e){}attach(makeApi());
+addEventListener('online',()=>{touch();reconcile()});addEventListener('offline',()=>setS('offline'));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&Date.now()-lastRec>30000){lastRec=Date.now();reconcile()}})}
+const gateHtml=()=>{if(st.gate=='loading')return`<div class="em" style="margin-top:30vh"><div class="m">Cargando…</div></div>`;
+if(st.gate=='login')return`<div class="top" style="margin-top:12vh;text-align:center;padding:28px 20px"><div class="hi" style="font-size:24px">TU GUÍA DE ACCIÓN</div><p class="m" style="margin:10px 0 0">Inicia sesión para conservar tu información y continuar desde cualquier dispositivo.</p></div><button class="b" data-a="csIn">Continuar con Google</button>${hasData()?'<button class="b t" data-a="csSkip">Usar solo en este dispositivo</button>':''}`;
+if(st.gate=='link')return`<div class="c" style="margin-top:12vh"><h2 style="margin-top:0">Encontramos información guardada en este dispositivo.</h2><div class="m">Puedes llevarla a tu cuenta. Siempre se conserva una copia de seguridad en este teléfono.</div></div><button class="b" data-a="csLink">Vincular mis datos a esta cuenta</button><button class="b s" data-a="csNew">Empezar como nuevo</button>`;return''};
+return{enabled:()=>on,state:()=>st.state,label:()=>LBL[st.state],dot:()=>DOT[st.state],lastTxt,user:()=>st.user,touch,init,attach,sync:()=>reconcile(),paint,
+gate(){if(!st.gate)return false;try{$('#nav').style.display='none';$('#app').innerHTML=gateHtml()}catch(e){}return true},
+async signIn(){if(!api)return;try{await api.signIn()}catch(e){const c=(e&&e.code)||'';toast(/closed|cancelled/.test(c)?'Inicio de sesión cancelado.':c=='auth/unauthorized-domain'?'Este dominio no está autorizado en Firebase.':'No se pudo iniciar sesión. Intenta de nuevo.')}},
+async signOut(){try{await reconcile()}catch(e){}try{await api.signOut()}catch(e){toast('No se pudo cerrar la sesión.')}},
+skip(){st.gate=null;redraw()},link(){lm();meta.uid=st.user.uid;sm();backup();st.gate=null;S.fbUid=st.user.uid;save();redraw();return reconcile()},
+fresh(){backup();localStorage.removeItem('g30');meta={uid:st.user.uid,rev:{},hash:{},base:{},localAt:{},cur:{}};sm();location.reload()},
+_meta:()=>meta,_reset:()=>{meta={}}}})();
+const pfBtn=()=>`<button class="pf" data-a="perfil" aria-label="Perfil y sincronización">${E(((S.p&&S.p.n)||'?')[0].toUpperCase())}<small data-cs="dot">${CS.dot()}</small></button>`;
+function perfilV(){const u=CS.user(),ini=E(((u&&u.name)||(S.p&&S.p.n)||'?')[0].toUpperCase());
+return`<button class="b t sm" data-a="cerrar">← Volver</button><div class="hd"><div class="hi">Perfil</div></div><div class="c"><div class="row" style="justify-content:flex-start;gap:12px">${u&&u.photo?`<img src="${E(u.photo)}" alt="" referrerpolicy="no-referrer" style="width:48px;height:48px;border-radius:50%">`:`<div class="tag" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">${ini}</div>`}<div><b>${E(u?u.name:(S.p&&S.p.n)||'')}</b><div class="m">${E(u?u.email:'Sin cuenta')}</div></div></div></div>
+<div class="c"><div class="row"><span>Sincronización</span><b data-cs="state">${CS.label()}</b></div><div class="row" style="margin-top:6px"><span class="m">Última sincronización</span><span class="m" data-cs="last">${CS.lastTxt()}</span></div>${CS.enabled()&&u?'<button class="b s" data-a="csSync">Sincronizar ahora</button>':''}${CS.enabled()?'':'<div class="m" style="margin-top:6px">La nube todavía no está configurada. La app funciona con tu información en este dispositivo.</div>'}</div>${u?'<button class="b t" data-a="csOutAsk">Cerrar sesión</button>':CS.enabled()?'<button class="b" data-a="csIn">Continuar con Google</button>':''}`}
+Object.assign(A,{perfil(){S.v=perfilV},csIn(){return CS.signIn()},csSkip(){CS.skip()},csLink(){toast('Vinculando…');return CS.link().then(()=>toast('Datos vinculados a tu cuenta.'))},csNew(){CS.fresh()},csSync(){toast('Sincronizando…');return CS.sync()},
+csOutAsk(){openSheet(`<div style="font-size:18px;font-weight:700">¿Cerrar sesión en este dispositivo?</div><div class="m">Tu información no se borra de la nube.</div><button class="b" data-a="csOut">Cerrar sesión</button><button class="b t" data-a="shx">Cancelar</button>`)},
+csOut(){closeSheet();toast('Cerrando sesión…');return CS.signOut()}});
+window.CS=CS;
+try{CS.init()}catch(e){}
 render();
 </script></body></html>
