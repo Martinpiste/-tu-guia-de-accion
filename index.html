@@ -52,7 +52,8 @@ details.ac,details{background:var(--card);border:1px solid var(--ln);border-radi
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-</head><body><main id="app"></main><nav class="nav" id="nav"></nav>
+<script>window.addEventListener("error",function(e){var a=document.getElementById("app");if(a&&a.textContent.indexOf("Cargando tu información")>-1){a.innerHTML="";var c=document.createElement("div");c.className="c";c.style.marginTop="12vh";var b=document.createElement("b");b.textContent="No pudimos iniciar la aplicación";var m=document.createElement("div");m.className="m";m.textContent=String(e.message||"Error desconocido");c.appendChild(b);c.appendChild(m);a.appendChild(c);var r=document.createElement("button");r.className="b";r.textContent="Intentar de nuevo";r.onclick=function(){location.reload()};a.appendChild(r)}});</script>
+</head><body><main id="app"><div class="em" style="margin-top:30vh"><div class="m">Cargando tu información…</div></div></main><nav class="nav" id="nav"></nav>
 <script>
 /* ===== CONTENIDO CENTRALIZADO: edita aquí planes, pasos, guiones, objeciones y contenido oficial ===== */
 const st=(t,what,why,how,ex,act,sc)=>({t,what,why,how,ex,act,sc});
@@ -607,10 +608,10 @@ try{const t=localStorage.getItem(TK);if(t)applyTheme(t)}catch(e){}
 A.theme=(e,v)=>{try{localStorage.setItem(TK,v)}catch(x){}applyTheme(v)};
 /* ===== ETAPA 1: Google + nube (Firebase Auth + Firestore). Local primero, nube después ===== */
 const CS=(()=>{
-const cfg=window.FIREBASE_CONFIG||{};let on=!!(cfg.apiKey&&cfg.projectId&&!/PEGAR/i.test(cfg.apiKey+cfg.projectId)&&typeof firebase!=='undefined');
+let cfg={},on=false;
 const SEC={profile:['p','d','stage','uid','fbUid'],plan:['r','team'],activities:['acts','res','g','sup'],people:['people','ins'],meetings:['jt','rev'],incentives:['inc'],progress:['ev'],settings:['mode','eqt','lt','role'],team:['L','fbIn']};
-const MK='g30meta',st={state:on?'pending':'off',user:null,gate:null,last:0};
-let meta={},tm=null,busy=false,api=null,lastRec=0;
+const MK='g30meta',st={state:'pending',user:null,gate:'loading',last:0,errCode:'',errMsg:'',errRaw:''};
+let meta={},tm=null,busy=false,api=null,lastRec=0,wd=null;
 const lm=()=>{try{meta=JSON.parse(localStorage.getItem(MK))||{}}catch(e){meta={}}['rev','hash','base','localAt','cur'].forEach(k=>meta[k]=meta[k]||{})},sm=()=>{try{localStorage.setItem(MK,JSON.stringify(meta))}catch(e){}};
 const hs=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return h+':'+s.length};
 const snap=()=>{const o={};for(const k in SEC){const d={};SEC[k].forEach(x=>{if(S[x]!==undefined)d[x]=S[x]});o[k]=JSON.stringify(d)}return o};
@@ -638,27 +639,41 @@ catch(e){setS(navigator.onLine===false?'offline':'error')}finally{busy=false}}
 function touch(){if(!on||!api||!st.user||st.gate)return;const sn=snap();let d=false;
 for(const k in SEC){const h=hs(sn[k]);if(meta.cur[k]!==h){meta.cur[k]=h;meta.localAt[k]=Date.now()}if(meta.hash[k]!==h)d=true}
 sm();if(!d)return;setS(navigator.onLine===false?'offline':'pending');clearTimeout(tm);tm=setTimeout(reconcile,1800)}
-async function onUser(u){st.user=u?{uid:u.uid,name:u.displayName||'',email:u.email||'',photo:u.photoURL||''}:null;
+async function onUser(u){clearTimeout(wd);st.user=u?{uid:u.uid,name:u.displayName||'',email:u.email||'',photo:u.photoURL||''}:null;
 if(!u){st.gate='login';redraw();return}
 lm();
 if(meta.uid&&meta.uid!==u.uid){backup();localStorage.removeItem('g30');meta={uid:u.uid,rev:{},hash:{},base:{},localAt:{},cur:{}};sm();location.reload();return}
-if(!meta.uid){let r={};try{r=await api.getAll(u.uid)}catch(e){st.gate=null;setS('error');redraw();return}
+if(!meta.uid){let r={};try{r=await api.getAll(u.uid)}catch(e){fail('FS_READ','No se pudo leer tu información en la nube. Revisa tu conexión y que las reglas de Firestore estén publicadas.',e);return}
 if(Object.keys(r).length){meta.uid=u.uid;sm();applyRemote(r);return}
 if(hasData()){st.gate='link';redraw();return}
 meta.uid=u.uid;sm()}
 st.gate=null;S.fbUid=u.uid;save();redraw();reconcile()}
 function makeApi(){const auth=firebase.auth(),fs=firebase.firestore(),col=u=>fs.collection('users').doc(u).collection('sections');
 return{onUser:cb=>auth.onAuthStateChanged(cb),
-async signIn(){const p=new firebase.auth.GoogleAuthProvider();try{await auth.signInWithPopup(p)}catch(e){if(e.code=='auth/popup-blocked'||e.code=='auth/operation-not-supported-in-this-environment'){await auth.signInWithRedirect(p)}else throw e}},
+async signIn(){const p=new firebase.auth.GoogleAuthProvider();try{await auth.signInWithPopup(p)}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e.code)){await auth.signInWithRedirect(p)}else throw e}},
 signOut:()=>auth.signOut(),
 async getAll(u){const o={};(await col(u).get()).forEach(d=>{const x=d.data();o[d.id]={json:x.json,rev:x.rev||0,updatedAt:x.updatedAt||0}});return o},
 write:(u,k,data,exp)=>fs.runTransaction(async tx=>{const ref=col(u).doc(k),s=await tx.get(ref),rr=s.exists?(s.data().rev||0):0;if(rr!==exp)return{ok:false};tx.set(ref,{...data,rev:rr+1,createdAt:s.exists?s.data().createdAt:data.updatedAt});return{ok:true,rev:rr+1}})}}
 function attach(a){api=a;on=true;st.gate='loading';st.state='pending';lm();api.onUser(onUser)}
-function init(){if(!on)return;try{firebase.initializeApp(cfg)}catch(e){}attach(makeApi());
+function fail(c,m,e){st.gate='error';st.errCode=c;st.errMsg=m;st.errRaw=e?String(e.code||e.message||''):'';redraw()}
+const ld=src=>new Promise((ok,no)=>{const x=document.createElement('script');x.src=src;x.onload=ok;x.onerror=()=>no(new Error('load '+src));document.head.appendChild(x)});
+async function init(){try{
+if(!window.FIREBASE_CONFIG){try{await ld('firebase-config.js?v='+Date.now())}catch(e){}}
+cfg=window.FIREBASE_CONFIG;
+if(!cfg)return fail('CFG_MISSING','No se pudo cargar firebase-config.js. Verifica que esté en la misma carpeta que index.html.');
+if(!(cfg.apiKey&&cfg.projectId)||/PEGAR/i.test(Object.values(cfg).join(' ')))return fail('CFG_PLACEHOLDER','firebase-config.js todavía tiene valores de ejemplo.');
+for(const[n,t]of[['app',()=>typeof firebase!=='undefined'],['auth',()=>typeof firebase!=='undefined'&&!!firebase.auth],['firestore',()=>typeof firebase!=='undefined'&&!!firebase.firestore]]){if(!t()){try{await ld('https://www.gstatic.com/firebasejs/10.12.2/firebase-'+n+'-compat.js')}catch(e){return fail('SDK_LOAD','No se pudo cargar Firebase ('+n+'). Revisa tu conexión a Internet o desactiva bloqueadores de contenido.',e)}if(!t())return fail('SDK_LOAD','Firebase ('+n+') no se inicializó correctamente.')}}
+try{firebase.initializeApp(cfg)}catch(e){if(!/already/i.test(String(e.message)))return fail('INIT','No se pudo iniciar Firebase.',e)}
+let a;try{a=makeApi()}catch(e){return fail('INIT','No se pudo iniciar el inicio de sesión.',e)}
+wd=setTimeout(()=>{if(st.gate=='loading')fail('AUTH_TIMEOUT','Firebase no respondió a tiempo. Revisa tu conexión e inténtalo de nuevo.')},12000);
+attach(a);
 addEventListener('online',()=>{touch();reconcile()});addEventListener('offline',()=>setS('offline'));
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&Date.now()-lastRec>30000){lastRec=Date.now();reconcile()}})}
-const gateHtml=()=>{if(st.gate=='loading')return`<div class="em" style="margin-top:30vh"><div class="m">Cargando…</div></div>`;
-if(st.gate=='login')return`<div class="top" style="margin-top:12vh;text-align:center;padding:28px 20px"><div class="hi" style="font-size:24px">TU GUÍA DE ACCIÓN</div><p class="m" style="margin:10px 0 0">Inicia sesión para conservar tu información y continuar desde cualquier dispositivo.</p></div><button class="b" data-a="csIn">Continuar con Google</button>${hasData()?'<button class="b t" data-a="csSkip">Usar solo en este dispositivo</button>':''}`;
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&Date.now()-lastRec>30000){lastRec=Date.now();reconcile()}});
+try{firebase.auth().getRedirectResult().catch(e=>toast(e&&e.code=='auth/unauthorized-domain'?'Este dominio no está autorizado en Firebase.':'No se pudo completar el inicio de sesión.'))}catch(e){}
+}catch(e){fail('INIT','No se pudo iniciar el inicio de sesión.',e)}}
+const gateHtml=()=>{if(st.gate=='loading')return`<div class="em" style="margin-top:30vh"><div class="m">Cargando tu información…</div></div>`;
+if(st.gate=='error')return`<div class="c" style="margin-top:12vh"><h2 style="margin-top:0">No pudimos iniciar tu sesión</h2><div class="m">${E(st.errMsg)}</div><div class="m" style="margin-top:8px">Código: ${E(st.errCode)}${st.errRaw?' · '+E(st.errRaw):''}</div></div><button class="b" data-a="csRetry">Intentar de nuevo</button>`;
+if(st.gate=='login')return`<div class="top" style="margin-top:12vh;text-align:center;padding:28px 20px"><div class="hi" style="font-size:24px">TU GUÍA DE ACCIÓN</div><p class="m" style="margin:10px 0 0">Inicia sesión para conservar tu información y continuar desde cualquier dispositivo.</p></div><button class="b" data-a="csIn">Continuar con Google</button>`;
 if(st.gate=='link')return`<div class="c" style="margin-top:12vh"><h2 style="margin-top:0">Encontramos información guardada en este dispositivo.</h2><div class="m">Puedes llevarla a tu cuenta. Siempre se conserva una copia de seguridad en este teléfono.</div></div><button class="b" data-a="csLink">Vincular mis datos a esta cuenta</button><button class="b s" data-a="csNew">Empezar como nuevo</button>`;return''};
 return{enabled:()=>on,state:()=>st.state,label:()=>LBL[st.state],dot:()=>DOT[st.state],lastTxt,user:()=>st.user,touch,init,attach,sync:()=>reconcile(),paint,
 gate(){if(!st.gate)return false;try{$('#nav').style.display='none';$('#app').innerHTML=gateHtml()}catch(e){}return true},
@@ -671,10 +686,10 @@ const pfBtn=()=>`<button class="pf" data-a="perfil" aria-label="Perfil y sincron
 function perfilV(){const u=CS.user(),ini=E(((u&&u.name)||(S.p&&S.p.n)||'?')[0].toUpperCase());
 return`<button class="b t sm" data-a="cerrar">← Volver</button><div class="hd"><div class="hi">Perfil</div></div><div class="c"><div class="row" style="justify-content:flex-start;gap:12px">${u&&u.photo?`<img src="${E(u.photo)}" alt="" referrerpolicy="no-referrer" style="width:48px;height:48px;border-radius:50%">`:`<div class="tag" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">${ini}</div>`}<div><b>${E(u?u.name:(S.p&&S.p.n)||'')}</b><div class="m">${E(u?u.email:'Sin cuenta')}</div></div></div></div>
 <div class="c"><div class="row"><span>Sincronización</span><b data-cs="state">${CS.label()}</b></div><div class="row" style="margin-top:6px"><span class="m">Última sincronización</span><span class="m" data-cs="last">${CS.lastTxt()}</span></div>${CS.enabled()&&u?'<button class="b s" data-a="csSync">Sincronizar ahora</button>':''}${CS.enabled()?'':'<div class="m" style="margin-top:6px">La nube todavía no está configurada. La app funciona con tu información en este dispositivo.</div>'}</div>${u?'<button class="b t" data-a="csOutAsk">Cerrar sesión</button>':CS.enabled()?'<button class="b" data-a="csIn">Continuar con Google</button>':''}`}
-Object.assign(A,{perfil(){S.v=perfilV},csIn(){return CS.signIn()},csSkip(){CS.skip()},csLink(){toast('Vinculando…');return CS.link().then(()=>toast('Datos vinculados a tu cuenta.'))},csNew(){CS.fresh()},csSync(){toast('Sincronizando…');return CS.sync()},
+Object.assign(A,{csRetry(){location.reload()},perfil(){S.v=perfilV},csIn(){return CS.signIn()},csLink(){toast('Vinculando…');return CS.link().then(()=>toast('Datos vinculados a tu cuenta.'))},csNew(){CS.fresh()},csSync(){toast('Sincronizando…');return CS.sync()},
 csOutAsk(){openSheet(`<div style="font-size:18px;font-weight:700">¿Cerrar sesión en este dispositivo?</div><div class="m">Tu información no se borra de la nube.</div><button class="b" data-a="csOut">Cerrar sesión</button><button class="b t" data-a="shx">Cancelar</button>`)},
 csOut(){closeSheet();toast('Cerrando sesión…');return CS.signOut()}});
 window.CS=CS;
-try{CS.init()}catch(e){}
+CS.init();
 render();
 </script></body></html>
