@@ -659,9 +659,11 @@ function fail(c,m,e){st.gate='error';st.errCode=c;st.errMsg=m;st.errRaw=e?String
 const ld=src=>new Promise((ok,no)=>{const x=document.createElement('script');x.src=src;x.onload=ok;x.onerror=()=>no(new Error('load '+src));document.head.appendChild(x)});
 async function init(){try{
 if(!window.FIREBASE_CONFIG){try{await ld('firebase-config.js?v='+Date.now())}catch(e){}}
+const CK=['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'],PH=/pegar_aqui|^your[_-]|^tu_(api|project|app|id)|replace[_-]?me|change[_-]?me|^(undefined|null)$/i,bad=c=>c?CK.filter(k=>{const v=c[k];return typeof v!=='string'||!v.trim()||PH.test(v.trim())}):CK;
 cfg=window.FIREBASE_CONFIG;
+if(!cfg||bad(cfg).length){const prev=cfg;delete window.FIREBASE_CONFIG;try{await ld('firebase-config.js?v='+Date.now())}catch(e){}cfg=window.FIREBASE_CONFIG||prev}
 if(!cfg)return fail('CFG_MISSING','No se pudo cargar firebase-config.js. Verifica que esté en la misma carpeta que index.html.');
-if(!(cfg.apiKey&&cfg.projectId)||/PEGAR/i.test(Object.values(cfg).join(' ')))return fail('CFG_PLACEHOLDER','firebase-config.js todavía tiene valores de ejemplo.');
+const bd=bad(cfg);if(bd.length)return fail('CFG_PLACEHOLDER','firebase-config.js se cargó, pero estos campos están vacíos o con valores de ejemplo: '+bd.join(', ')+'. Proyecto leído: '+(cfg.projectId||'(vacío)')+'.');
 for(const[n,t]of[['app',()=>typeof firebase!=='undefined'],['auth',()=>typeof firebase!=='undefined'&&!!firebase.auth],['firestore',()=>typeof firebase!=='undefined'&&!!firebase.firestore]]){if(!t()){try{await ld('https://www.gstatic.com/firebasejs/10.12.2/firebase-'+n+'-compat.js')}catch(e){return fail('SDK_LOAD','No se pudo cargar Firebase ('+n+'). Revisa tu conexión a Internet o desactiva bloqueadores de contenido.',e)}if(!t())return fail('SDK_LOAD','Firebase ('+n+') no se inicializó correctamente.')}}
 try{firebase.initializeApp(cfg)}catch(e){if(!/already/i.test(String(e.message)))return fail('INIT','No se pudo iniciar Firebase.',e)}
 let a;try{a=makeApi()}catch(e){return fail('INIT','No se pudo iniciar el inicio de sesión.',e)}
