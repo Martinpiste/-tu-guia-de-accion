@@ -2615,7 +2615,7 @@ P3.OM=OM;
 ;['nuevaP','editP','p3pfuse'].forEach(k=>{const o=A[k];if(o)A[k]=function(){S.tmp.pfTM=false;return o.apply(this,arguments)}});
 
 /* ===== v26: pantalla «Sincronización y versión» (estado de nube, actualización segura, verificación de integridad) ===== */
-window.APP_VERSION='v26';window.APP_SCHEMA=1;
+window.APP_VERSION='v27';window.APP_SCHEMA=1;
 const SY=(()=>{
 const VER=window.APP_VERSION,SCH=window.APP_SCHEMA;
 const num=v=>+(String(v||'').replace(/\D/g,''))||0;
@@ -2629,7 +2629,8 @@ const rd=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null
 async function chk(){const t=sy();if(t.chk==='busy')return;t.chk='busy';redraw();
  try{if(navigator.onLine===false){t.chk='off';return}
   const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('chk',Date.now());
-  const r=await fetch(u.toString(),{cache:'no-store'});if(!r.ok)throw new Error('http');const tx=await r.text();
+  const ac=typeof AbortController!=='undefined'?new AbortController():null,tm=setTimeout(()=>{try{ac&&ac.abort()}catch(e){}},12000);
+  let r;try{r=await fetch(u.toString(),{cache:'no-store',signal:ac?ac.signal:undefined})}finally{clearTimeout(tm)}if(!r.ok)throw new Error('http');const tx=await r.text();
   const m=/APP_VERSION\s*=\s*'(v\d+)'/.exec(tx);if(!m)throw new Error('nover');
   t.rem=m[1];t.chk=num(m[1])>num(VER)?'new':'ok'}
  catch(e){t.chk='err'}
